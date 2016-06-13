@@ -18,15 +18,6 @@
 #import "AKTLayoutShell.h"
 // import-"views & controllers.h"
 
-//--------------# Macro #--------------
-#define AKTLyoutVersion 12
-#if __has_feature(objc_arc)
-    #define AKTWeakOject(VAR, OBJ) __weak typeof(OBJ) VAR = OBJ
-#else
-    #define AKTWeakOject(VAR, OBJ) __block typeof(OBJ) VAR = OBJ
-#endif
-//--------------# E.n.d #--------------#>Macro
-
 //--------------------Structs statement, globle variables...--------------------
 // 快速布局约束类型
 typedef NS_ENUM(NSInteger, QuickLayoutConstraintType) {
