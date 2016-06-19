@@ -19,22 +19,35 @@
 
 //--------------------Structs statement, globle variables...--------------------
 typedef struct {
+    const void *conditionBlock;
+    const void *attributeBlock;
+} AKTDynamicLayoutBlock;
+
+typedef struct {
     //> 不可变布局信息
     AKTAttributeItem itemArrayForStatic[kItemMaximum];
     int itemCountForStatic;
     //> Layout info, array elements are layout items. 可变布局信息，数组元素是布局项(在满足某种条件时会被重新赋值)
     AKTAttributeItem itemArrayForDynamic[kItemMaximum];
     int itemCountForDynamic;
+    
     //> 需要被布局的view
-    const void *bindView;
     //> 是否已经检查
-    bool check;
     //> 更新布局信息时生成的tag，用以区分不同的布局信息
+    //> 是否正在获取动态布局信息, 信息将被存储到动态部分
+    //> 有效的布局信息，当某个参照视图销毁时，布局信息将无效
+    const void *bindView;
+    bool currentLayoutInfoDidCheck;
     long layoutInfoTag;
-    //> 获取布局信息（void(^)(AKTLayoutShellAttribute *layout, AKTLayoutShellContext context)）
-    const void *layoutInfoFetchBlock;
-    //> 是否正在更新布局信息
     bool layoutDynamicContextBegin;
+    bool validLayoutAttributeInfo;
+    
+    AKTDynamicLayoutBlock blockArrayForDynamic[kItemMaximum];
+    int blockCountForDynamic;
+    
+    // 当前参照视图的集合
+    void *currentViewReferenced[kItemMaximum*2];
+    int viewReferenced;
 } AKTLayoutAttribute;
 typedef AKTLayoutAttribute* AKTLayoutAttributeRef;
 // Shared attributeRef
@@ -53,6 +66,12 @@ extern AKTLayoutAttributeRef attributeRef_global;
  */
 void aktLayoutAttributeInit(UIView *view);
 
+/**
+ *  AKTLayoutAttribute deallock
+ *
+ *  @param attributeRef
+ */
+void aktLayoutAttributeDealloc(AKTLayoutAttributeRef attributeRef, bool freeMemory);
 #pragma mark - create item
 //|---------------------------------------------------------
 /**
@@ -79,6 +98,6 @@ void __akt__create__size();
  * Calculate layout with the infor from the attribute items, return CGRect
  * Configurations in AKTLayoutParam, as follows configurations can be divided into vertical and horizontal direction
  * In one direction two configurations in addition to "whRatio" is enough to calculate the frame in that direction. WhRation will be convert to the configuration of width or height
-  */
-CGRect calculateAttribute(AKTLayoutAttributeRef attributeRef);
+ */
+CGRect calculateAttribute(AKTLayoutAttributeRef attributeRef, const void *referenceViewPtr);
 

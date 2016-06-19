@@ -26,7 +26,6 @@ char const kAktDidLayoutComplete;
 AKTLayoutAttributeRef attributeRef_global = NULL;
 BOOL willCommitAnimation = NO;
 extern BOOL screenRotatingAnimationSupport;
-extern bool needGetLayoutInfo_sheel;
 //-------------------- E.n.d -------------------->Structs statement & globle variables
 
 @interface UIView()
@@ -269,12 +268,7 @@ extern bool needGetLayoutInfo_sheel;
         // Change view's attributRef
         AKTLayoutAttributeRef pt = self.attributeRef;
         if (pt) {
-            if (pt->layoutInfoFetchBlock) {
-                CFBridgingRelease(pt->layoutInfoFetchBlock);
-            }
-            if (needFree) {
-                free(pt);
-            }
+            aktLayoutAttributeDealloc(pt, needFree);
         }
         // 移除先前的AKTLayout布局设置关联信息，并更新当前信息
         for (AKTWeakContainer *container in self.viewsReferenced) {
@@ -301,11 +295,6 @@ extern bool needGetLayoutInfo_sheel;
     if(attributeRef_global && attributeRef_global->bindView != (__bridge const void *)(self)){
         attributeRef_context = attributeRef_global;
     }
-//    // 设置视图的自适应长度和宽度属性（UILabel、UIImageView未来支持）.
-//    if (!(self.adaptiveHeight || self.adaptiveWidth)) {
-//        self.adaptiveWidth = @(YES);
-//        self.adaptiveHeight = @(YES);
-//    }
     
     
     // 创建布局信息存储对象
@@ -326,12 +315,10 @@ extern bool needGetLayoutInfo_sheel;
     aktLayoutAttributeInit(self);
     
     
-    // 初次获取布局信息并计算布局并设置frame
-    needGetLayoutInfo_sheel = true;
+    // 获取布局信息并计算布局并设置frame
     layout(sharedShellAttribute());
-    CGRect rect = calculateAttribute(attributeRef_global);
+    CGRect rect = calculateAttribute(attributeRef_global, NULL);
     // 添加动态布局信息获取Block（layoutInfoTag == CGFloat_MAX）
-    attributeRef_global->layoutInfoFetchBlock = CFBridgingRetain(layout);
     self.attributeRef = attributeRef_global;
     self.frame = rect;
     // 已经布局完成回调
@@ -348,7 +335,7 @@ extern bool needGetLayoutInfo_sheel;
  *  @备注：一般在更改了view的size需要立刻执行布局刷新时调用
  */
 - (void)setAKTNeedRelayout {
-    if (self.attributeRef) self.frame = calculateAttribute(self.attributeRef);
+    if (self.attributeRef) self.frame = calculateAttribute(self.attributeRef, NULL);
 }
 
 /*

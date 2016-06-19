@@ -150,7 +150,9 @@ BOOL screenRotating                     = NO;
  */
 - (void)aktUpdateLayoutChainNode {
     // 刷新子节点布局
-    for (AKTWeakContainer *container in self.layoutChain) {
+    NSArray *temp = self.layoutChain.allObjects;
+    for (int i = 0; i<temp.count; i++) {
+        AKTWeakContainer *container = temp[i];
         UIView *bindView = container.weakView;
         // 如果bindView的布局更新计数器大于最小刷新阈值，则暂时不必计算布局更新
         NSInteger layoutUpdateCount = bindView.layoutUpdateCount;
@@ -162,16 +164,16 @@ BOOL screenRotating                     = NO;
         }
         // 是否需要同步运算（需要动画时、需要旋转时 或者 视图是UITableView 、 UICollectionView）
         if (willCommitAnimation || (screenRotatingAnimationSupport && screenRotating) || [bindView isKindOfClass:[UITableView class]] || [bindView isKindOfClass:[UICollectionView class]]) {
-            CGRect rect = calculateAttribute(bindView.attributeRef);
+            CGRect rect = calculateAttribute(bindView.attributeRef, self);
             [bindView setFrame:rect];
             __aktViewDidLayoutWithView(bindView);// 通知target当前视图布局完成
         }else{
             dispatch_async(dispatch_get_main_queue(), ^{
-//                if (bindView.superview) {
-                    CGRect rect = calculateAttribute(bindView.attributeRef);
-                    [bindView setNewFrame:rect];
-                    __aktViewDidLayoutWithView(bindView);// 通知target当前视图布局完成
-//                }
+                //                if (bindView.superview) {
+                CGRect rect = calculateAttribute(bindView.attributeRef, self);
+                [bindView setNewFrame:rect];
+                __aktViewDidLayoutWithView(bindView);// 通知target当前视图布局完成
+                //                }
             });
             // 模拟设置frame，为了将计算传播下去，真正计算的是上面异步计算frame
             bindView.frame = CGRectMake(FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX);
@@ -243,19 +245,20 @@ BOOL screenRotating                     = NO;
     // 移除布局信息\布局参考引用信息
     if(self.attributeRef) {
         AKTLayoutAttributeRef pt = self.attributeRef;
-        if (pt->layoutInfoFetchBlock) {
-            CFBridgingRelease(pt->layoutInfoFetchBlock);
-        }
-        free(self.attributeRef);
+        aktLayoutAttributeDealloc(pt, true);
     }
     AKTWeakContainer *myContainer = self.aktContainer;
     for (AKTWeakContainer *container in self.layoutChain) {
         [container.weakView.viewsReferenced removeObject:myContainer];
+        AKTLayoutAttributeRef ref = container.weakView.attributeRef;
+        if (ref) {
+            ref->validLayoutAttributeInfo = false;
+        }
     }
     for (AKTWeakContainer *container in self.viewsReferenced) {
         [container.weakView.layoutChain removeObject:myContainer];
     }
-    //    mAKT_Log(@"%@ _dealloc",self.aktName);
+//        mAKT_Log(@"%@ _dealloc",self.aktName);
     [self myDealloc];
 }
 

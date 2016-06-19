@@ -13,11 +13,6 @@
 #import "AKTLayoutAttribute.h"
 // import-"views & controllers.h"
 
-//--------------------Structs statement, globle variables...--------------------
-void aktDynamicLayoutBeginContextWithIdentifier(long identifier);
-void aktDynamicLayoutEndContext();
-//-------------------- E.n.d -------------------->Structs statement, globle variables...
-
 @interface AKTLayoutShellConfigure : NSObject
 /*
  * Multiple and offset
@@ -64,10 +59,11 @@ AKTLayoutShellAttribute *sharedShellAttribute();
 - (AKTLayoutShellItem *)size;
 
 /**
- *  添加动态布局信息
+ *  Add dynamic layout for view. Layout info will be update when needed.
+ *  @note: When the condition returned YES, attribute will be update to the view's layout info storage.
  *
- *  @param identifier 标志符，用来区分不同的信息
- *  @param attribute
+ *  @param condition Condition for updating layout info.
+ *  @param attribute Block for updateing layout info.
  */
-- (void)aktLayoutIdentifier:(long)identifier withDynamicAttribute:(void(^)())attribute;
+- (void)addDynamicLayoutInCondition:(BOOL(^)())condition andAttribute:(void(^)(AKTLayoutShellAttribute *dynamicLayout))attribute;
 @end
